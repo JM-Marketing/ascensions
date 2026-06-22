@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Mountain, TrendingUp, Flag, CalendarClock, ChevronRight, MapPin, Sparkles } from 'lucide-react'
 import useStore from '../store'
 import { ProgressRing, useCountUp, EmptyState } from './ui'
-import { difficultyOf, fmtElevation } from '../lib/labels'
+import { difficultyOf, fmtElevation, CHALLENGES } from '../lib/labels'
 
 function StatCard({ icon: Icon, label, value, suffix, color = '#34D399' }) {
   const v = useCountUp(value)
@@ -15,6 +15,27 @@ function StatCard({ icon: Icon, label, value, suffix, color = '#34D399' }) {
       <p className="text-white text-2xl font-bold leading-none">{v.toLocaleString('fr-CA')}<span className="text-sm text-slate-500 font-semibold ml-1">{suffix}</span></p>
       <p className="text-[11px] text-slate-500 mt-1.5 font-medium">{label}</p>
     </div>
+  )
+}
+
+function ChallengeMini({ meta, done, total, onClick }) {
+  const anim = useCountUp(done)
+  const pct = total ? (done / total) * 100 : 0
+  return (
+    <button onClick={onClick}
+      className="rounded-2xl border p-4 glass-strong card-hover rise flex items-center gap-4 text-left cursor-pointer">
+      <ProgressRing size={72} stroke={6} progress={pct} color={meta.color} glow>
+        <div className="text-center">
+          <p className="text-white font-bold text-lg leading-none">{anim}</p>
+          <p className="text-[9px] text-slate-500">/ {total}</p>
+        </div>
+      </ProgressRing>
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: meta.color }}><Sparkles size={11} /> DÉFI {meta.short}</div>
+        <p className="text-white font-semibold text-sm mt-1">{meta.label}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{total - done} restant{total - done > 1 ? 's' : ''}</p>
+      </div>
+    </button>
   )
 }
 
@@ -44,21 +65,20 @@ export default function Dashboard({ setTab, onOpenHike }) {
 
   const stats = useMemo(() => {
     const done = hikes.filter((h) => h.status === 'fait')
-    const adk = hikes.filter((h) => h.adk46)
-    const adkDone = adk.filter((h) => h.status === 'fait').length
-    const totalGain = done.reduce((s, h) => s + (h.gainM || 0), 0)
     return {
       done: done.length,
       toTry: hikes.filter((h) => h.status === 'a_essayer').length,
       planned: hikes.filter((h) => h.status === 'planifie'),
-      totalGain,
-      adkTotal: adk.length,
-      adkDone,
-      adkPct: adk.length ? (adkDone / adk.length) * 100 : 0,
+      totalGain: done.reduce((s, h) => s + (h.gainM || 0), 0),
     }
   }, [hikes])
 
-  const adkAnim = useCountUp(stats.adkDone)
+  const challenges = useMemo(() => {
+    return CHALLENGES.map((meta) => {
+      const peaks = hikes.filter((h) => h.challenge === meta.id)
+      return { meta, total: peaks.length, done: peaks.filter((h) => h.status === 'fait').length }
+    }).filter((c) => c.total > 0)
+  }, [hikes])
 
   return (
     <div className="h-full overflow-y-auto px-4 md:px-7 py-5 pb-24 space-y-6">
@@ -70,30 +90,21 @@ export default function Dashboard({ setTab, onOpenHike }) {
         </h1>
       </div>
 
-      {/* Défi 46ers + stats */}
-      <div className="grid lg:grid-cols-3 gap-3.5">
-        {stats.adkTotal > 0 && (
-          <button onClick={() => setTab('goals')}
-            className="rounded-2xl border p-4 glass-strong card-hover rise flex items-center gap-4 text-left cursor-pointer">
-            <ProgressRing size={76} stroke={6} progress={stats.adkPct} glow>
-              <div className="text-center">
-                <p className="text-white font-bold text-lg leading-none">{adkAnim}</p>
-                <p className="text-[9px] text-slate-500">/ {stats.adkTotal}</p>
-              </div>
-            </ProgressRing>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-amber-300 text-[10px] font-bold"><Sparkles size={11} /> DÉFI 46ers</div>
-              <p className="text-white font-semibold text-sm mt-1">Les 46 Adirondacks</p>
-              <p className="text-xs text-slate-500 mt-0.5">{stats.adkTotal - stats.adkDone} restants</p>
-            </div>
-          </button>
-        )}
-        <div className={`grid grid-cols-3 gap-3.5 ${stats.adkTotal > 0 ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
-          <StatCard icon={Flag} label="Sommets faits" value={stats.done} color="#34D399" />
-          <StatCard icon={Mountain} label="À essayer" value={stats.toTry} color="#FBBF77" />
-          <StatCard icon={TrendingUp} label="Dénivelé cumulé" value={stats.totalGain} suffix="m" color="#6EE7B7" />
-        </div>
+      {/* Stats clés */}
+      <div className="grid grid-cols-3 gap-3.5">
+        <StatCard icon={Flag} label="Sommets faits" value={stats.done} color="#34D399" />
+        <StatCard icon={Mountain} label="À essayer" value={stats.toTry} color="#FBBF77" />
+        <StatCard icon={TrendingUp} label="Dénivelé cumulé" value={stats.totalGain} suffix="m" color="#6EE7B7" />
       </div>
+
+      {/* Défis (une carte par liste officielle) */}
+      {challenges.length > 0 && (
+        <div className="grid sm:grid-cols-2 gap-3.5">
+          {challenges.map((c) => (
+            <ChallengeMini key={c.meta.id} meta={c.meta} done={c.done} total={c.total} onClick={() => setTab('goals')} />
+          ))}
+        </div>
+      )}
 
       {/* Prochaines sorties */}
       <div>

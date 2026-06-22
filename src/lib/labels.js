@@ -13,8 +13,15 @@ export const STATUSES = [
   { id: 'fait',      label: 'Fait',      short: 'Fait',      color: '#34D399' },
 ]
 
+// Listes officielles / défis (chaque sommet peut appartenir à une liste)
+export const CHALLENGES = [
+  { id: 'adk46', label: 'Les 46 Adirondacks', short: 'ADK 46', region: 'Adirondacks',     total: 46, color: '#FBBF77', finisher: '46er' },
+  { id: 'nh48',  label: 'Les 48 White Mountains', short: 'NH 48', region: 'White Mountains', total: 48, color: '#7DD3FC', finisher: '48er' },
+]
+
 export const difficultyOf = (id) => DIFFICULTIES.find((d) => d.id === id) || DIFFICULTIES[1]
 export const statusOf = (id) => STATUSES.find((s) => s.id === id) || STATUSES[0]
+export const challengeOf = (id) => CHALLENGES.find((c) => c.id === id) || null
 
 // Formatage métrique
 export const fmtElevation = (m) => (m ? `${Math.round(m).toLocaleString('fr-CA')} m` : '—')

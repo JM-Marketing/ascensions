@@ -9,6 +9,9 @@ const normHike = (h) => ({
   dateDone: h.date_done,
   coverUrl: h.cover_url,
   adkRank: h.adk_rank,
+  // liste/défi : compat ascendante avec l'ancien schéma adk46/adk_rank
+  challenge: h.challenge || (h.adk46 ? 'adk46' : ''),
+  listRank: h.list_rank ?? h.adk_rank ?? h.listRank ?? h.adkRank ?? null,
 })
 const normPhoto = (p) => ({ ...p, hikeId: p.hike_id, filePath: p.file_path })
 

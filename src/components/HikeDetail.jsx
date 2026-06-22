@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import useStore from '../store'
 import { Badge, toast } from './ui'
-import { difficultyOf, statusOf, fmtElevation, fmtDistance, mapsUrl, STATUSES } from '../lib/labels'
+import { difficultyOf, statusOf, fmtElevation, fmtDistance, mapsUrl, STATUSES, challengeOf } from '../lib/labels'
 import HikeForm from './HikeForm'
 
 function Stat({ icon: Icon, label, value }) {
@@ -40,6 +40,7 @@ export default function HikeDetail({ hikeId, onClose }) {
   if (!hike) return null
   const diff = difficultyOf(hike.difficulty)
   const st = statusOf(hike.status)
+  const chal = challengeOf(hike.challenge)
 
   const onPick = async (e) => {
     const files = [...e.target.files]
@@ -92,10 +93,10 @@ export default function HikeDetail({ hikeId, onClose }) {
           <div className="absolute bottom-3 left-4 right-4">
             <div className="flex items-center gap-2 mb-1.5">
               <Badge color={st.color} label={st.label} />
-              {hike.adk46 && (
+              {chal && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(251,191,119,0.18)', color: '#FBBF77', border: '1px solid rgba(251,191,119,0.35)' }}>
-                  ADK 46 · #{hike.adkRank}
+                  style={{ background: `${chal.color}2e`, color: chal.color, border: `1px solid ${chal.color}59` }}>
+                  {chal.short} · #{hike.listRank}
                 </span>
               )}
             </div>

@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { Check, Mountain, Plus, Target, Trash2, ChevronRight, Minus } from 'lucide-react'
 import useStore from '../store'
 import { ProgressRing, useCountUp, ModalShell, Field, TextInput, toast, EmptyState } from './ui'
-import { fmtElevation } from '../lib/labels'
+import { fmtElevation, CHALLENGES } from '../lib/labels'
 
-function Adk46Card({ peaks, onToggle, onOpen }) {
+function ChallengeCard({ meta, peaks, onToggle, onOpen }) {
   const done = peaks.filter((p) => p.status === 'fait').length
   const total = peaks.length
   const pct = total ? (done / total) * 100 : 0
@@ -14,30 +14,30 @@ function Adk46Card({ peaks, onToggle, onOpen }) {
   return (
     <div className="rounded-2xl border overflow-hidden glass-strong rise">
       <div className="p-5 flex items-center gap-5">
-        <ProgressRing size={86} stroke={7} progress={pct} glow>
+        <ProgressRing size={86} stroke={7} progress={pct} color={meta.color} glow>
           <div className="text-center">
             <p className="text-white font-bold text-xl leading-none">{animDone}</p>
             <p className="text-[10px] text-slate-500 mt-0.5">/ {total}</p>
           </div>
         </ProgressRing>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(251,191,119,0.16)', color: '#FBBF77', border: '1px solid rgba(251,191,119,0.3)' }}>DÉFI 46ers</span>
-          </div>
-          <h2 className="text-white font-display text-xl font-semibold mt-1.5">Les 46 High Peaks</h2>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block"
+            style={{ background: `${meta.color}29`, color: meta.color, border: `1px solid ${meta.color}4d` }}>
+            DÉFI {meta.short}
+          </span>
+          <h2 className="text-white font-display text-xl font-semibold mt-1.5">{meta.label}</h2>
           <p className="text-xs text-slate-400 mt-1">
             {done === total
-              ? 'Bravo, tu es officiellement un·e 46er ! 🎉'
-              : `Plus que ${total - done} sommet${total - done > 1 ? 's' : ''} pour devenir 46er.`}
+              ? `Bravo, tu es officiellement un·e ${meta.finisher} ! 🎉`
+              : `Plus que ${total - done} sommet${total - done > 1 ? 's' : ''} pour devenir ${meta.finisher}.`}
           </p>
         </div>
       </div>
 
       <button onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-5 py-3 border-t text-xs font-semibold text-emerald-300 hover:bg-white/[0.02] transition-colors cursor-pointer"
-        style={{ borderColor: 'var(--border)' }}>
-        {expanded ? 'Masquer la liste' : 'Voir les 46 sommets'}
+        className="w-full flex items-center justify-between px-5 py-3 border-t text-xs font-semibold hover:bg-white/[0.02] transition-colors cursor-pointer"
+        style={{ borderColor: 'var(--border)', color: meta.color }}>
+        {expanded ? 'Masquer la liste' : `Voir les ${total} sommets`}
         <ChevronRight size={15} className={`transition-transform ${expanded ? 'rotate-90' : ''}`} />
       </button>
 
@@ -57,7 +57,7 @@ function Adk46Card({ peaks, onToggle, onOpen }) {
                 </button>
                 <button onClick={() => onOpen(p.id)} className="flex-1 min-w-0 text-left cursor-pointer">
                   <p className={`text-sm font-medium truncate ${isDone ? 'text-slate-400 line-through' : 'text-slate-200'}`}>
-                    <span className="text-slate-600 text-xs mr-1.5">#{p.adkRank}</span>{p.name}
+                    <span className="text-slate-600 text-xs mr-1.5">#{p.listRank}</span>{p.name}
                   </p>
                 </button>
                 <span className="text-[11px] text-slate-500 flex-shrink-0">{fmtElevation(p.elevationM)}</span>
@@ -117,7 +117,13 @@ export default function Goals({ onOpenHike }) {
   const { hikes, goals, updateHike } = useStore()
   const [adding, setAdding] = useState(false)
 
-  const adk = useMemo(() => hikes.filter((h) => h.adk46).sort((a, b) => (a.adkRank || 0) - (b.adkRank || 0)), [hikes])
+  // Regroupe les sommets par liste/défi (uniquement les défis qui ont des sommets chargés)
+  const challengeGroups = useMemo(() => {
+    return CHALLENGES.map((meta) => ({
+      meta,
+      peaks: hikes.filter((h) => h.challenge === meta.id).sort((a, b) => (a.listRank || 0) - (b.listRank || 0)),
+    })).filter((g) => g.peaks.length > 0)
+  }, [hikes])
 
   const toggle = async (peak) => {
     const next = peak.status === 'fait' ? 'a_essayer' : 'fait'
@@ -129,12 +135,16 @@ export default function Goals({ onOpenHike }) {
 
   return (
     <div className="h-full overflow-y-auto px-4 md:px-7 py-5 pb-24 space-y-6">
-      {adk.length > 0 ? (
-        <Adk46Card peaks={adk} onToggle={toggle} onOpen={onOpenHike} />
+      {challengeGroups.length > 0 ? (
+        <div className="space-y-4">
+          {challengeGroups.map((g) => (
+            <ChallengeCard key={g.meta.id} meta={g.meta} peaks={g.peaks} onToggle={toggle} onOpen={onOpenHike} />
+          ))}
+        </div>
       ) : (
         <div className="rounded-2xl border p-5 glass" style={{ borderColor: 'var(--border)' }}>
-          <p className="text-sm text-slate-300 font-semibold flex items-center gap-2"><Mountain size={16} className="text-amber-300" /> Les 46 Adirondacks ne sont pas chargés</p>
-          <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Exécute <code>supabase/full-setup.sql</code> dans ton projet Supabase pour pré-remplir la liste officielle des 46 High Peaks.</p>
+          <p className="text-sm text-slate-300 font-semibold flex items-center gap-2"><Mountain size={16} className="text-amber-300" /> Les listes officielles ne sont pas chargées</p>
+          <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Exécute <code>supabase/full-setup.sql</code> dans ton projet Supabase pour pré-remplir les 46 Adirondacks et les 48 White Mountains.</p>
         </div>
       )}
 

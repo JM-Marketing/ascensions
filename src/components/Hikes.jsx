@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react'
 import { Mountain, Plus, Search, TrendingUp, MapPin, Star } from 'lucide-react'
 import useStore from '../store'
 import { FilterChip, EmptyState, Badge } from './ui'
-import { DIFFICULTIES, STATUSES, difficultyOf, statusOf, fmtElevation } from '../lib/labels'
+import { DIFFICULTIES, STATUSES, difficultyOf, statusOf, fmtElevation, challengeOf } from '../lib/labels'
 import HikeForm from './HikeForm'
 
 function HikeCard({ hike, onClick }) {
   const diff = difficultyOf(hike.difficulty)
   const st = statusOf(hike.status)
+  const chal = challengeOf(hike.challenge)
   return (
     <button onClick={onClick}
       className="text-left rounded-2xl overflow-hidden border card-hover group cursor-pointer rise"
@@ -23,11 +24,11 @@ function HikeCard({ hike, onClick }) {
         )}
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 to-transparent" />
         <div className="absolute top-2.5 left-2.5"><Badge color={st.color} label={st.short} /></div>
-        {hike.adk46 && (
+        {chal && (
           <div className="absolute top-2.5 right-2.5">
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(251,191,119,0.16)', color: '#FBBF77', border: '1px solid rgba(251,191,119,0.3)' }}>
-              ADK 46
+              style={{ background: `${chal.color}29`, color: chal.color, border: `1px solid ${chal.color}4d` }}>
+              {chal.short}
             </span>
           </div>
         )}
