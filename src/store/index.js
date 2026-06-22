@@ -42,6 +42,7 @@ const useStore = create((set, get) => ({
   hikes: [],
   photos: [],
   goals: [],
+  outings: [],
   userName: localStorage.getItem('asc_username') || '',
   loading: false,
 
@@ -53,16 +54,18 @@ const useStore = create((set, get) => ({
   // --- INIT ---
   fetchAll: async () => {
     set({ loading: true })
-    const [hikes, photos, goals] = await Promise.all([
+    const [hikes, photos, goals, outings] = await Promise.all([
       supabase.from('hikes').select('*').order('created_at', { ascending: false }),
       supabase.from('hike_photos').select('*').order('created_at', { ascending: true }),
       supabase.from('goals').select('*').order('created_at', { ascending: false }),
+      supabase.from('outings').select('*').order('date', { ascending: true }),
     ])
     if (hikes.error) console.error('fetch hikes:', JSON.stringify(hikes.error))
     set({
       hikes: (hikes.data || []).map(normHike),
       photos: (photos.data || []).map(normPhoto),
       goals: goals.data || [],
+      outings: outings.data || [],
       loading: false,
     })
   },
@@ -147,6 +150,32 @@ const useStore = create((set, get) => ({
   deleteGoal: async (id) => {
     await supabase.from('goals').delete().eq('id', id)
     set((s) => ({ goals: s.goals.filter((g) => g.id !== id) }))
+  },
+
+  // --- SORTIES (planification simple : date + destinations) ---
+  addOuting: async (outing) => {
+    const { data, error } = await supabase.from('outings').insert([{
+      date: outing.date,
+      destinations: outing.destinations || [],
+      notes: outing.notes || '',
+      done: false,
+    }]).select().single()
+    if (error) console.error('addOuting error:', JSON.stringify(error))
+    if (data) set((s) => ({ outings: [...s.outings, data].sort((a, b) => (a.date < b.date ? -1 : 1)) }))
+    return { error }
+  },
+  updateOuting: async (id, changes) => {
+    const patch = {}
+    if (changes.date !== undefined) patch.date = changes.date
+    if (changes.destinations !== undefined) patch.destinations = changes.destinations
+    if (changes.notes !== undefined) patch.notes = changes.notes
+    if (changes.done !== undefined) patch.done = changes.done
+    await supabase.from('outings').update(patch).eq('id', id)
+    set((s) => ({ outings: s.outings.map((o) => o.id === id ? { ...o, ...patch } : o).sort((a, b) => (a.date < b.date ? -1 : 1)) }))
+  },
+  deleteOuting: async (id) => {
+    await supabase.from('outings').delete().eq('id', id)
+    set((s) => ({ outings: s.outings.filter((o) => o.id !== id) }))
   },
 }))
 

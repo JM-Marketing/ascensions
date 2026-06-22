@@ -58,12 +58,21 @@ create table if not exists goals (
   created_at timestamptz default now()
 );
 
+create table if not exists outings (
+  id uuid primary key default gen_random_uuid(),
+  date date not null,
+  destinations text[] default '{}',   -- une ou plusieurs destinations (noms libres)
+  notes text default '',
+  done boolean default false,
+  created_at timestamptz default now()
+);
+
 -- ---------- RLS + POLICIES (accès via la clé anon — app perso à 2) ----------
 
 do $$
 declare t text;
 begin
-  foreach t in array array['hikes','hike_photos','goals']
+  foreach t in array array['hikes','hike_photos','goals','outings']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "anon all %1$s" on %1$I', t);

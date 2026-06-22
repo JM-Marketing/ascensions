@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { LayoutDashboard, Mountain, Target, BarChart3, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Mountain, Target, BarChart3, Backpack, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import useStore from '../store'
 import { Toaster } from './ui'
@@ -8,7 +8,8 @@ import { Toaster } from './ui'
 const NAV_ITEMS = [
   { id: 'home', label: 'Accueil', icon: LayoutDashboard, desc: 'Vue d\'ensemble de tes sommets' },
   { id: 'hikes', label: 'Sommets', icon: Mountain, desc: 'Tous tes hikes : faits, à essayer, planifiés' },
-  { id: 'goals', label: 'Objectifs', icon: Target, desc: 'Les 46 Adirondacks & objectifs perso' },
+  { id: 'outings', label: 'Sorties', icon: Backpack, desc: 'Planifie tes prochaines virées' },
+  { id: 'goals', label: 'Objectifs', icon: Target, desc: 'Les listes officielles & objectifs perso' },
   { id: 'stats', label: 'Stats', icon: BarChart3, desc: 'Ton bilan d\'ascensions' },
 ]
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Layout, { LogoIcon } from './components/Layout'
 import Dashboard from './components/Dashboard'
 import Hikes from './components/Hikes'
+import Outings from './components/Outings'
 import Goals from './components/Goals'
 import Stats from './components/Stats'
 import HikeDetail from './components/HikeDetail'
@@ -44,8 +45,9 @@ export default function App() {
   return (
     <Layout tab={tab} setTab={setTab}>
       <div key={tab} className="tab-enter h-full">
-        {tab === 'home' && <Dashboard setTab={setTab} onOpenHike={setOpenId} />}
+        {tab === 'home' && <Dashboard setTab={setTab} />}
         {tab === 'hikes' && <Hikes onOpenHike={setOpenId} />}
+        {tab === 'outings' && <Outings />}
         {tab === 'goals' && <Goals onOpenHike={setOpenId} />}
         {tab === 'stats' && <Stats />}
       </div>

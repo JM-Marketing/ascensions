@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
-import { Mountain, TrendingUp, Flag, CalendarClock, ChevronRight, MapPin, Sparkles } from 'lucide-react'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { Mountain, TrendingUp, Flag, CalendarClock, ChevronRight, Sparkles } from 'lucide-react'
 import useStore from '../store'
 import { ProgressRing, useCountUp, EmptyState } from './ui'
-import { difficultyOf, fmtElevation, CHALLENGES } from '../lib/labels'
+import { CHALLENGES } from '../lib/labels'
 
 function StatCard({ icon: Icon, label, value, suffix, color = '#34D399' }) {
   const v = useCountUp(value)
@@ -39,36 +41,33 @@ function ChallengeMini({ meta, done, total, onClick }) {
   )
 }
 
-function UpcomingRow({ hike, onClick }) {
-  const diff = difficultyOf(hike.difficulty)
+function OutingRow({ outing, onClick }) {
   return (
     <button onClick={onClick} className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl border hover:bg-white/[0.02] transition-colors cursor-pointer text-left"
       style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'var(--border)' }}>
-      <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: 'linear-gradient(160deg,#143026,#0C1714)' }}>
-        {hike.coverUrl ? <img src={hike.coverUrl} alt="" className="w-full h-full object-cover" /> : <Mountain size={18} className="text-emerald-500/40" />}
+      <div className="w-11 h-11 rounded-lg flex flex-col items-center justify-center flex-shrink-0 border" style={{ background: 'rgba(52,211,153,0.07)', borderColor: 'rgba(52,211,153,0.18)' }}>
+        <span className="text-emerald-300 text-sm font-bold leading-none">{format(new Date(outing.date + 'T00:00'), 'd', { locale: fr })}</span>
+        <span className="text-emerald-400/70 text-[9px] uppercase font-semibold">{format(new Date(outing.date + 'T00:00'), 'MMM', { locale: fr })}</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-200 truncate">{hike.name}</p>
-        <p className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
-          {hike.region && <span className="flex items-center gap-1"><MapPin size={10} />{hike.region}</span>}
-          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full" style={{ background: diff.color }} />{diff.label}</span>
+        <p className="text-sm font-semibold text-slate-200 truncate">{(outing.destinations || []).join(', ') || 'Sortie'}</p>
+        <p className="text-[11px] text-slate-500 capitalize flex items-center gap-1 mt-0.5">
+          <CalendarClock size={10} />{format(new Date(outing.date + 'T00:00'), 'EEEE d MMMM', { locale: fr })}
         </p>
       </div>
-      <span className="text-xs text-slate-300 font-medium flex-shrink-0">{fmtElevation(hike.elevationM)}</span>
       <ChevronRight size={16} className="text-slate-600 flex-shrink-0" />
     </button>
   )
 }
 
-export default function Dashboard({ setTab, onOpenHike }) {
-  const { hikes, userName } = useStore()
+export default function Dashboard({ setTab }) {
+  const { hikes, outings, userName } = useStore()
 
   const stats = useMemo(() => {
     const done = hikes.filter((h) => h.status === 'fait')
     return {
       done: done.length,
       toTry: hikes.filter((h) => h.status === 'a_essayer').length,
-      planned: hikes.filter((h) => h.status === 'planifie'),
       totalGain: done.reduce((s, h) => s + (h.gainM || 0), 0),
     }
   }, [hikes])
@@ -79,6 +78,11 @@ export default function Dashboard({ setTab, onOpenHike }) {
       return { meta, total: peaks.length, done: peaks.filter((h) => h.status === 'fait').length }
     }).filter((c) => c.total > 0)
   }, [hikes])
+
+  const upcoming = useMemo(() => {
+    const t = new Date().toISOString().slice(0, 10)
+    return outings.filter((o) => !o.done && o.date >= t).slice(0, 4)
+  }, [outings])
 
   return (
     <div className="h-full overflow-y-auto px-4 md:px-7 py-5 pb-24 space-y-6">
@@ -110,17 +114,17 @@ export default function Dashboard({ setTab, onOpenHike }) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-white flex items-center gap-2"><CalendarClock size={16} className="text-emerald-400" /> Prochaines sorties</h2>
-          <button onClick={() => setTab('hikes')} className="text-xs text-emerald-400 font-semibold flex items-center gap-1 cursor-pointer hover:text-emerald-300">
+          <button onClick={() => setTab('outings')} className="text-xs text-emerald-400 font-semibold flex items-center gap-1 cursor-pointer hover:text-emerald-300">
             Tout voir <ChevronRight size={13} />
           </button>
         </div>
-        {stats.planned.length === 0 ? (
+        {upcoming.length === 0 ? (
           <EmptyState icon={CalendarClock} title="Aucune sortie planifiée"
-            hint="Passe un sommet en statut « Planifié » pour le retrouver ici."
-            actionLabel="Parcourir les sommets" onAction={() => setTab('hikes')} />
+            hint="Note ta prochaine virée : une date et une ou plusieurs destinations."
+            actionLabel="Planifier une sortie" onAction={() => setTab('outings')} />
         ) : (
           <div className="space-y-2">
-            {stats.planned.map((h) => <UpcomingRow key={h.id} hike={h} onClick={() => onOpenHike(h.id)} />)}
+            {upcoming.map((o) => <OutingRow key={o.id} outing={o} onClick={() => setTab('outings')} />)}
           </div>
         )}
       </div>

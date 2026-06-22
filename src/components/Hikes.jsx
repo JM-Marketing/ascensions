@@ -61,6 +61,7 @@ export default function Hikes({ onOpenHike }) {
   const [statusF, setStatusF] = useState('all')
   const [diffF, setDiffF] = useState('all')
   const [regionF, setRegionF] = useState('all')
+  const [personalOnly, setPersonalOnly] = useState(false)
 
   const regions = useMemo(() => {
     const set = new Set(hikes.map((h) => h.region).filter(Boolean))
@@ -69,13 +70,16 @@ export default function Hikes({ onOpenHike }) {
 
   const filtered = useMemo(() => {
     return hikes.filter((h) => {
+      if (personalOnly && h.challenge) return false
       if (statusF !== 'all' && h.status !== statusF) return false
       if (diffF !== 'all' && h.difficulty !== diffF) return false
       if (regionF !== 'all' && h.region !== regionF) return false
       if (q && !`${h.name} ${h.region} ${h.location}`.toLowerCase().includes(q.toLowerCase())) return false
       return true
     })
-  }, [hikes, statusF, diffF, regionF, q])
+  }, [hikes, statusF, diffF, regionF, q, personalOnly])
+
+  const personalCount = useMemo(() => hikes.filter((h) => !h.challenge).length, [hikes])
 
   const count = (id) => hikes.filter((h) => h.status === id).length
 
@@ -104,6 +108,8 @@ export default function Hikes({ onOpenHike }) {
 
       {/* Filtres difficulté + région */}
       <div className="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1">
+        <FilterChip active={personalOnly} label="Perso" count={personalCount} onClick={() => setPersonalOnly((v) => !v)} />
+        <span className="w-px bg-white/10 mx-1 flex-shrink-0" />
         <FilterChip active={diffF === 'all'} label="Toute difficulté" count={0} onClick={() => setDiffF('all')} />
         {DIFFICULTIES.map((d) => (
           <FilterChip key={d.id} active={diffF === d.id} label={d.label} count={0} onClick={() => setDiffF(d.id)} />
